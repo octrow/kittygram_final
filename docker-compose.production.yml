@@ -1,8 +1,8 @@
 version: '3'
 
 volumes:
-  pg_data:
-  static:
+  pg_data_production:
+  static_volume:
   media:
 
 services:
@@ -15,21 +15,21 @@ services:
     image: octrow/kittygram_backend
     env_file: .env
     volumes:
-      - static:/backend_static
+      - static_volume:/backend_static
       - media:/media
     depends_on:
       - db
   frontend:
     image: octrow/kittygram_frontend
     env_file: .env
-    command: cp -r /app/build/. /static/
+    command: cp -r /app/build/. /frontend_static/
     volumes:
-      - static:/static
+      - static_volume:/frontend_static
   gateway:
     image: octrow/kittygram_gateway
     env_file: .env
     volumes:
-      - static:/static
+      - static_volume:/statifiles/c
       - media:/media
     ports:
       - 9000:80
