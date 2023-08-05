@@ -1,14 +1,13 @@
 # main kittigram
 name: Main Kittygram workflow
 
-on:
-  push:
-    branches:
-      - main
-
+on: push
 jobs:
   tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
     services:
       postgres:
         image: postgres:13.10
@@ -21,10 +20,10 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: 3.9
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |
@@ -65,7 +64,7 @@ jobs:
         with:
           context: ./backend/
           push: true
-          tags: octrow/kittygram_backend:latest
+          tags: ${{ secrets.DOCKER_NICKNAME }}/kittygram_backend:latest
 
   frontend_tests:
     runs-on: ubuntu-latest
@@ -106,7 +105,7 @@ jobs:
         with:
           context: ./frontend/
           push: true
-          tags: octrow/kittygram_frontend:latest
+          tags: ${{ secrets.DOCKER_NICKNAME }}/kittygram_frontend:latest
 
   build_gateway_and_push_to_docker_hub:
     name: Push gateway Docker image to DockerHub
@@ -126,9 +125,10 @@ jobs:
         with:
           context: ./nginx/
           push: true
-          tags: octrow/kittygram_gateway:latest
+          tags: ${{ secrets.DOCKER_NICKNAME }}/kittygram_gateway:latest
 
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs:
       - build_and_push_to_docker_hub
@@ -173,4 +173,4 @@ jobs:
       with:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: Деплой kittygram успешно выполнен!
+        message: Деплой kittygram успешно выполнен! Коммит сделал ${{ github.actor }} с сообщением "${{ github.event.commits[0].message }}". Ссылка на коммит: https://github.com/${{ github.repository }}/commit/${{github.sha}}.
